@@ -1,4 +1,5 @@
 import colors from 'vuetify/es5/util/colors'
+require('dotenv').config()
 
 export default {
   // Global page headers: https://go.nuxtjs.dev/config-head
@@ -21,7 +22,7 @@ export default {
   css: [],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: [],
+  plugins: [{src : '~plugins/etc.js'},{src:'~plugins/vue-cookie.js'}],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -66,8 +67,17 @@ export default {
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {},
 
-
   generate: { 
     dir: '../public' 
-  }
+  },
+
+  env: { 
+    FIREBASE_APIKEY: process.env.apiKey, 
+    FIREBASE_AUTHDOMAIN: process.env.authDomain, 
+    FIREBASE_PROJECTID: process.env.projectId, 
+    FIREBASE_STORAGEBUCKET: process.env.storageBucket,
+    FIREBASE_MESSAGINGSENDERID: process.env.messagingSenderId, 
+    FIREBASE_APPID: process.env.appId, 
+    FIREBASE_MEASURMENTID: process.env.measurementId
+  },
 }
