@@ -41,15 +41,40 @@
       </v-btn>
       <v-toolbar-title v-text="title" />
       <v-spacer />
-      <v-text-field label="아이디" placeholder="아이디입력" elevation="3" outlined hide-details dense ></v-text-field>
-      <v-text-field label="비밀번호" placeholder="비밀번호입력" elevation="3" outlined hide-details dense ></v-text-field>
-      <v-btn color="success" dark > 로그인 </v-btn>
+      <v-container v-if="cookie">
+        Welcome, {{cookie.id}}!<v-btn color="warning" dark @click="logout()"> 로그아웃 </v-btn>        
+      </v-container>
+      <v-container v-else>
+        <v-row>
+          <v-col>
+            <v-text-field v-model="id" label="아이디" placeholder="아이디입력" elevation="3" outlined hide-details dense ></v-text-field>
+          </v-col>
+          <v-col>
+            <v-text-field v-model="pass" label="비밀번호" placeholder="비밀번호입력" elevation="3" outlined hide-details dense ></v-text-field>
+          </v-col>
+          <v-col>
+            <v-btn color="success" dark @click="login()"> 로그인 </v-btn>
+          </v-col>
+        </v-row>
+      </v-container>
       <v-btn icon @click.stop="rightDrawer = !rightDrawer">
         <v-icon>mdi-menu</v-icon>
       </v-btn>
     </v-app-bar>
     <v-main>
       <v-container>
+        <v-dialog v-model="dialog" persistent max-width="290" > 
+          <v-card> 
+            <v-card-title class="text-h5"> 아이디 패스워드 확인 </v-card-title> 
+            <v-card-text>
+              {{ dialog_text }}
+            </v-card-text> 
+            <v-card-actions> 
+              <v-spacer></v-spacer> 
+            <v-btn color="green darken-1" text @click="dialog = false" > 닫기 </v-btn> 
+            </v-card-actions> 
+          </v-card> 
+        </v-dialog>
         <Nuxt />
       </v-container>
     </v-main>
@@ -67,32 +92,33 @@
       <span>&copy; {{ new Date().getFullYear() }}</span>
     </v-footer>
   </v-app>
+
+  
 </template>
 
 <script>
+import { doc, query, getDoc, collection, getDocs } from "firebase/firestore";
+
 export default {
   name: 'DefaultLayout',
+  
   data() {
     return {
       clipped: false,
       drawer: false,
       fixed: false,
+      dialog: false,
+      dialog_text:false,
       picker: (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().substr(0, 10),
+      id:'',
+      pass:'',
+      auth:'',
+      cookie:[],
       items: [
         {
           icon: 'mdi-apps',
           title: 'Welcome',
           to: '/',
-        },
-        {
-          icon: 'mdi-chart-bubble',
-          title: 'Inspire',
-          to: '/inspire',
-        },
-        {
-        icon: 'mdi-chart-bubble',
-        title: 'Test',
-        to: '/test',
         },
         {
         icon: 'mdi-account-cog',
@@ -111,9 +137,63 @@ export default {
       title: 'MRI Reservate System',
     }
   },
-  method: {
-    login(){
+  mounted(){
+    this.items = [];
+    this.items.push(
+      {
+        icon: 'mdi-apps',
+        title: 'Welcome',
+        to: '/',
+      }
+    );
+    this.cookie = this.$cookies.get('login');
+
+    if(this.cookie){
+      this.items.push(
+        {
+          icon: 'mdi-calendar-month',
+          title: 'Reservate',
+          to: '/reservate',
+        }
+      );
+      if(this.cookie.auth === 'M'){
+        this.items.push(
+          {
+          icon: 'mdi-account-cog',
+          title: 'Admin',
+          to: '/admin',
+          }
+        );
+      }
+    }
+  },
+  methods: {
+    async login(){
+      //const q = query(collection(this.$db, "users"), where("id","==",this.id));
+      //const q = query(collection(this.$db, "description"), orderBy("desc","asc"));
+      const q = doc(this.$db, "users", this.id);
+      const docSnap = await getDoc(q);
+
+      if (docSnap.exists()) {
+          const get_data = JSON.stringify(docSnap.data());
+          const login_data = JSON.parse(get_data);
+          if(login_data.pass === this.pass){
+            this.$cookies.set('login', login_data); 
+            location.reload();
+          }else{
+            this.dialog_text = '아이디와 패스워드 정보가 일치하지 않습니다.';
+            this.dialog = true;    
+          }
+      } else {
+        console.log("No such document!");
+        this.dialog_text = '아이디 정보가 존재하지 않습니다.';
+        this.dialog = true;
+      }
       
+    },
+    logout(){
+      this.$cookies.remove('login');
+      location.href = '/';
     }
   }
 }
