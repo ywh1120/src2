@@ -266,8 +266,8 @@ export default {
             const q = query(collection(this.$db, "description"), orderBy("desc","asc"));
             const querySnapshot = await getDocs(q);
             querySnapshot.forEach((doc) => {
-                let get_data = JSON.stringify(doc.data());
-                this.desc_items.push(JSON.parse(get_data).desc);
+                let get_data = doc.data();
+                this.desc_items.push(get_data.desc);
                 console.log(JSON.stringify(doc.data()));
             });
 
@@ -277,14 +277,14 @@ export default {
             const q = query(collection(this.$db,"time"));
             const querySnapshot = await getDocs(q);
             querySnapshot.forEach((doc)=>{
-                let get_data = JSON.stringify(doc.data());
-                if(JSON.parse(get_data).use === 'Y'){
-                    this.selected_time.push(JSON.parse(get_data).time);
+                let get_data = doc.data();
+                if(get_data.use === 'Y'){
+                    this.selected_time.push(get_data.time);
                 }
             });
         },
         async notice_submit(){
-            let date = dayjs().format("YYYY.MM.DD"); 
+            const date = dayjs().format("YYYY.MM.DD"); 
             try {
                 await setDoc(doc(this.$db, "notice", date), {
                     notice:this.notice_content
@@ -302,20 +302,16 @@ export default {
         time_submit(){
             try {
                 this.time_items.forEach(async (this_time)=>{
-                    let use_time='';
-                    
-                    if(this.selected_time.find(this_time) === undefined){
-                        use_time = 'N';
-                    }else{
-                        use_time = 'Y';
-                    }
+                    let use_time='N';
+                    this.selected_time.forEach((selt)=>{
+                       if(selt === this_time){
+                        use_time='Y';
+                       } 
+                    });
                     await setDoc(doc(this.$db, "time", this_time), {
                         time:this_time,
                         use:use_time
                     });
-                    this.snack_text = this.selected_time.find(this_time);
-
-                    this.snackbar = true;
                 });
                 
                 this.time_dialog = false;

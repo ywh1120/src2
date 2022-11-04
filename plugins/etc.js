@@ -16,29 +16,12 @@ Vue.prototype.$moment = moment
 //}
 
 const firebaseConfig = {
-
-
-    apiKey: "AIzaSyA69_YhiaHQbLBoVzMtLEM4k1NK7awHYSY",
-    
-    
-    authDomain: "exam-app-40a1f.firebaseapp.com",
-    
-    
-    databaseURL: "https://exam-app-40a1f-default-rtdb.asia-southeast1.firebasedatabase.app",
-    
-    
-    projectId: "exam-app-40a1f",
-    
-    
-    storageBucket: "exam-app-40a1f.appspot.com",
-    
-    
-    messagingSenderId: "283457636276",
-    
-    
-    appId: "1:283457636276:web:c7b71c1f4e2d7c24ad54e1"
-    
-    
+  apiKey: "AIzaSyAd6rbFa_UtzUxK8wKeVf33XyEll2YdJr8",
+  authDomain: "firetest-6d7c0.firebaseapp.com",
+  projectId: "firetest-6d7c0",
+  storageBucket: "firetest-6d7c0.appspot.com",
+  messagingSenderId: "349760030860",
+  appId: "1:349760030860:web:27d14af7d3bf0e80bb13a9"  
 };
     
 const app = initializeApp(firebaseConfig);

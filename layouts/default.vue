@@ -175,8 +175,8 @@ export default {
       const docSnap = await getDoc(q);
 
       if (docSnap.exists()) {
-          const get_data = JSON.stringify(docSnap.data());
-          const login_data = JSON.parse(get_data);
+          const get_data = docSnap.data();
+          const login_data = get_data;
           if(login_data.pass === this.pass){
             this.$cookies.set('login', login_data); 
             location.reload();
