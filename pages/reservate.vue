@@ -26,6 +26,7 @@
                                     hide-details="auto" 
                                     :rules="rules" 
                                     dense 
+                                    
                                     v-model="reserve.res_num">
                                     </v-text-field> 
                                 </v-col> 
@@ -90,7 +91,7 @@
     </div>
 </template> 
 <script>
-import { query, setDoc,doc, addDoc, getDocs, collection,orderBy } from "firebase/firestore";
+import { query, setDoc,doc, addDoc, getDocs,getDoc, collection,orderBy } from "firebase/firestore";
 import dayjs from "dayjs";
 
 export default { 
@@ -106,13 +107,14 @@ export default {
         reservate1:[],
         reservate2:[],
         reservate3:[],
+        reservate4:[],
         rules: [ value => !!value || 'Required.', value => (value && value.length >= 3) || 'Min 3 characters', ], 
         
     }), 
     mounted() {
         this.read_Desc();
         this.read_Time();
-        //this.read_reservate();
+        this.read_reservate();
     },
 
     methods: { 
@@ -137,10 +139,10 @@ export default {
                 }
             });
             
-            this.read_reservate(this.time_items);
+            this.set_timetable(this.time_items);
         },
-        read_reservate(t_items){
 
+        set_timetable(t_items){
             t_items.forEach((time)=>{
                 let reserve1={
                     time:time,
@@ -180,9 +182,37 @@ export default {
             this.entire_reservate.push(this.reservate2);
             this.entire_reservate.push(this.reservate3);
         },
+
+        async read_reservate(){
+            let date = dayjs().format("YYYY.MM.DD");
+            let q = query(collection(this.$db, "reservate", date));
+            let querySnapshot = await getDocs(q);
+            querySnapshot.forEach((doc)=>{
+
+            //});
+                let get_data = doc.data();
+                let get_mridata = get_data.mri1_0800;
+                let reserve1={
+                    time:get_mridata.time,
+                    res_desc:get_mridata.res_desc,
+                    res_name:get_mridata.res_name,
+                    res_num:get_mridata.res_num,
+                    res_id:get_mridata.res_id,
+                    res_reading:get_mridata.res_reading,
+                    res_comment:get_mridata.res_comment,
+                    mri_num:get_mridata.mri_num
+                };
+                this.reservate4.push(reserve1);
+            //querySnapshot.forEach((doc)=>{
+                
+            });
+            
+            this.entire_reservate.push(this.reservate4);
+            
+        },
         async reservate_mri(reserve, count){
             const date = dayjs().format("YYYY.MM.DD");
-            const reservate_data = 'mri'+count+'_'+reserve.time
+            const reservate_data = 'mri'+count+'_'+(reserve.time).replace(":","");
             try {
                 await setDoc(doc(this.$db, "reservate", date), {
                     [reservate_data]:{
