@@ -24,7 +24,7 @@
         </v-list-item>
       </v-list>
       <v-row justify="center"> 
-        <v-date-picker v-model="picker" locale="ko-kr" full-width class="mt-4">
+        <v-date-picker v-model="picker" locale="ko-kr" full-width class="mt-4" >
         </v-date-picker> 
       </v-row>
     </v-navigation-drawer>
@@ -76,6 +76,7 @@
           </v-card> 
         </v-dialog>
         <Nuxt />
+        
       </v-container>
     </v-main>
     <v-navigation-drawer v-model="rightDrawer" :right="right" temporary fixed>
@@ -101,7 +102,11 @@ import { doc, query, getDoc, collection, getDocs } from "firebase/firestore";
 
 export default {
   name: 'DefaultLayout',
-  
+  watch: {
+      picker() {
+          this.$store.state.loadDate = this.picker;
+      }
+  },
   data() {
     return {
       clipped: false,
@@ -138,6 +143,7 @@ export default {
     }
   },
   mounted(){
+    this.$store.state.loadDate = '2022.11.10';
     this.items = [];
     this.items.push(
       {
@@ -168,6 +174,9 @@ export default {
     }
   },
   methods: {
+    selectedDates(val){
+        this.$store.state.loadDate = val;
+    },
     async login(){
       //const q = query(collection(this.$db, "users"), where("id","==",this.id));
       //const q = query(collection(this.$db, "description"), orderBy("desc","asc"));

@@ -130,7 +130,16 @@ export default {
         this.init_screen();
         
     },
-
+    computed: {
+        getDate() {
+            return this.$store.state.loadDate;
+        }
+    },
+    watch: {
+        getDate() {
+            this.init_screen();
+        }
+    },
     methods: { 
         init_screen(){
             this.entire_reservate=[];
@@ -140,6 +149,7 @@ export default {
             this.read_Desc();
             this.read_Time();
             this.read_reservate();
+            
         },
         async read_Desc() { 
             this.desc_items = [];
@@ -209,14 +219,15 @@ export default {
 
         async read_reservate(){
             try{
-                const date = dayjs().format("YYYY.MM.DD");
+                //const date = dayjs().format("YYYY.MM.DD");
+                const date = this.getDate;
                 const q = doc(this.$db, "reservate",date);
-                const querySnapshot = await getDoc(q);
+                const docSnapshot = await getDoc(q);
                 
-                if(querySnapshot.exists){
+                if(docSnapshot.exists){
                     this.reservate1.forEach((time_data,idx)=>{
                         const get_key = "mri1_"+(time_data.time).replace(":","");
-                        const get_data = querySnapshot.data()[get_key];
+                        const get_data = docSnapshot.data()[get_key];
 
                         if(get_data){
                             const get_reserve={
@@ -237,7 +248,7 @@ export default {
 
                     this.reservate2.forEach((time_data,idx)=>{
                         const get_key = "mri2_"+(time_data.time).replace(":","");
-                        const get_data = querySnapshot.data()[get_key];  
+                        const get_data = docSnapshot.data()[get_key];  
                         if(get_data){
                             const get_reserve={
                                 time:get_data.time,
@@ -256,7 +267,7 @@ export default {
 
                     this.reservate3.forEach((time_data,idx)=>{
                         const get_key = "mri3_"+(time_data.time).replace(":","");
-                        const get_data = querySnapshot.data()[get_key];  
+                        const get_data = docSnapshot.data()[get_key];  
                         if(get_data){
                             const get_reserve={
                                 time:get_data.time,
@@ -273,36 +284,51 @@ export default {
                         }  
                     });
                     
-                    this.entire_reservate.push(this.reservate1);
-                    this.entire_reservate.push(this.reservate2);
-                    this.entire_reservate.push(this.reservate3);
+                    
                 }
             }catch(e){
 
             }
+            this.entire_reservate.push(this.reservate1);
+            this.entire_reservate.push(this.reservate2);
+            this.entire_reservate.push(this.reservate3);
         },
-        async reservate_mri(reserve, count){
-            const date = dayjs().format("YYYY.MM.DD");
-            const reservate_data = 'mri'+count+'_'+(reserve.time).replace(":","");
+        async reservate_mri(reserve, count){//예약함수
+            //const date = dayjs().format("YYYY.MM.DD");
+            const date = this.getDate;
+            const reservate_data = 'mri'+count+'_'+(reserve.time).replace(":","");//데이터 베이스 콜렉션 안에 담을 문서의 key형태(ex)mri1_0800)
             reserve.res_id = this.$cookies.get('login').id;
             //const reservate_data = 'mritest';
             try {
-                await setDoc(doc(this.$db, "reservate", date), {
-                    [reservate_data]:{
-                        time:reserve.time,
-                        res_desc:reserve.res_desc,
-                        res_name:reserve.res_name,
-                        res_num:reserve.res_num,
-                        res_id:reserve.res_id,
-                        res_reading:reserve.res_reading,
-                        res_comment:reserve.res_comment,
-                        mri_num:count
-                    }
-                },{merge:true});
+                //const docSnap = await getDoc(doc(this.$db, "reservate",date));
+                //if(docSnap.exists){
+                    //const get_data = docSnap.data()[reservate_data];
+                    //if(get_data.res_id !== reserve.res_id && this.$cookies.get('login').auth !== 'M'){//예약하려는 아이디가 이미 예약된 데이터의 아이디 값과 다를 경우
+                        //reserve.res_id = '';
+                        //this.snack_text = '이미 예약된 데이터입니다.';
+                        //this.snackbar = true;
+                    //}else if(get_data.res_id !== reserve.res_id || this.$cookies.get('login').auth !== 'M'){
+                        await setDoc(doc(this.$db, "reservate", date), {
+                            [reservate_data]:{
+                                time:reserve.time,
+                                res_desc:reserve.res_desc,
+                                res_name:reserve.res_name,
+                                res_num:reserve.res_num,
+                                res_id:reserve.res_id,
+                                res_reading:reserve.res_reading,
+                                res_comment:reserve.res_comment,
+                                mri_num:count
+                            }
+                        },{merge:true});
+                        
+                        reserve.reservated = 'Y';
+                        this.snack_text = '예약이 완료되었습니다.';
+                        this.snackbar = true;
+
+                    //}
+                //}
                 
-                reserve.reservated = 'Y';
-                this.snack_text = '예약이 완료되었습니다.';
-                this.snackbar = true;
+                
             } catch (e) {
 
             }
