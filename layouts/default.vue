@@ -30,9 +30,7 @@
     </v-navigation-drawer>
     <v-app-bar :clipped-left="clipped" fixed app>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-      <v-btn icon @click.stop="miniVariant = !miniVariant">
-        <v-icon>mdi-{{ `chevron-${miniVariant ? 'right' : 'left'}` }}</v-icon>
-      </v-btn>
+      
       <v-btn icon @click.stop="clipped = !clipped">
         <v-icon>mdi-application</v-icon>
       </v-btn>
@@ -42,7 +40,11 @@
       <v-toolbar-title v-text="title" />
       <v-spacer />
       <v-container v-if="cookie">
-        Welcome, {{cookie.id}}!<v-btn color="warning" dark @click="logout()"> 로그아웃 </v-btn>        
+        <v-row align="end">
+          <v-col align-self="end">
+            Welcome, {{cookie.id}}!<v-btn color="warning" dark @click="logout()"> 로그아웃 </v-btn>        
+          </v-col>
+        </v-row>
       </v-container>
       <v-container v-else>
         <v-row>
@@ -143,7 +145,8 @@ export default {
     }
   },
   mounted(){
-    this.$store.state.loadDate = '2022.11.10';
+    //const date = dayjs().format("YYYY-MM-DD");
+    this.$store.state.loadDate = this.picker;
     this.items = [];
     this.items.push(
       {
@@ -174,9 +177,7 @@ export default {
     }
   },
   methods: {
-    selectedDates(val){
-        this.$store.state.loadDate = val;
-    },
+    
     async login(){
       //const q = query(collection(this.$db, "users"), where("id","==",this.id));
       //const q = query(collection(this.$db, "description"), orderBy("desc","asc"));

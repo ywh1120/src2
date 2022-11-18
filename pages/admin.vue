@@ -284,7 +284,7 @@ export default {
             });
         },
         async notice_submit(){
-            const date = dayjs().format("YYYY.MM.DD"); 
+            const date = dayjs().format("YYYY-MM-DD"); 
             try {
                 await setDoc(doc(this.$db, "notice", date), {
                     notice:this.notice_content
