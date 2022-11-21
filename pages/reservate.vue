@@ -1,7 +1,10 @@
 <template> 
     <div> 
-        <v-container> 
+        
+        <v-container>
+            
             <v-row > 
+                
                 <v-col v-for="(reservate,count) in entire_reservate" :key="count" cols="6"> 
                     <v-card class="pa-1" outlined> 
                         <v-label v-if="count < 2">
@@ -24,7 +27,7 @@
                                     elevation="3" 
                                     outlined 
                                     hide-details="auto" 
-                                    :rules="rules" 
+                                     
                                     dense 
                                     :disabled="reserve.reservated == 'Y'"
                                     v-model="reserve.res_num">
@@ -96,6 +99,31 @@
             <v-snackbar v-model="snackbar" 
             :timeout="snack_timeout" > {{ snack_text }} 
             </v-snackbar>
+
+            <v-dialog v-model="notice_dialog" persistent max-width="600px" > 
+                <v-card>
+                    <v-card-title> 
+                        <span class="text-h5">공지사항</span> 
+                    </v-card-title> 
+                    <v-card-text> 
+                        <v-container>
+                            <v-row class="mb-6" no-gutters >
+                                <v-col>
+                                    <v-textarea 
+                                    outlined label="공지사항" 
+                                    readonly 
+                                    v-model="notice_content" >
+                                    </v-textarea>
+                                </v-col> 
+                            </v-row>
+                        </v-container>
+                    </v-card-text> 
+                    <v-card-actions> 
+                        <v-spacer></v-spacer>
+                        <v-btn color="blue darken-1" text @click="notice_dialog = false" > 닫기 </v-btn> 
+                    </v-card-actions> 
+                </v-card> 
+            </v-dialog>
         </v-container> 
     </div>
 
@@ -120,14 +148,18 @@ export default {
         snackbar: false, 
         snack_text: '', 
         snack_timeout: 3000,
+        notice_dialog:false,
+        notice_content:'',
         rules: [ value => !!value || 'Required.', value => (value && value.length >= 3) || 'Min 3 characters', ], 
-        
+        prograss_interval: {},
+        prograss_value: 0,
     }), 
     
     mounted() {
         if(!this.$cookies.get('login')){
             location.href = '/';
         }
+        
         this.init_screen();
     },
     computed: {
@@ -139,12 +171,10 @@ export default {
         getDate() {
             //this.init_screen();
             this.load_date();
-            //this.read_reservate();
         }
     },
     methods: { 
         init_screen(){//화면 초기화 함수
-            //const type_var = "init";
             this.entire_reservate=[];
             this.reservate1=[];
             this.reservate2=[];
@@ -152,7 +182,19 @@ export default {
             this.read_Desc();
             this.read_Time();
             this.read_reservate("init");
-            
+            this.load_notice();
+        },
+        async load_notice(){
+            const q = doc(this.$db, "notice","notice");
+            const docSnapshot = await getDoc(q);
+            if(docSnapshot.exists){
+                const get_data = docSnapshot.data();
+                if(get_data.onboard === 'Y'){
+                    this.notice_content = get_data.notice;
+                    this.notice_dialog = true;
+                }
+                
+            }
         },
         load_date(){
             //this.init_screen()
@@ -166,11 +208,8 @@ export default {
                     reservate_data.res_comment='';
                     reservate_data.mri_num='';
                     reservate_data.reservated='N';
-                    //this.snack_text = 'test2';
-                        //this.snackbar = true;
                 });
             });
-            //const type_var = "date";
             this.read_reservate("date");
         },
         async read_Desc() {//관리자 페이지에서 등록한 검사명 읽어 들이는 함수 
@@ -246,7 +285,7 @@ export default {
                 const docSnapshot = await getDoc(q);
                 
                 if(docSnapshot.exists){
-                    if(type_var === "init"){
+                    if(type_var === "init"){//화면이 첫 로딩되어 초기화 될때는 각 배열 데이터 새로 생성하여 넣어준다.
                         this.reservate1.forEach((time_data,idx)=>{
                             const get_key = "mri1_"+(time_data.time).replace(":","");
                             const get_data = docSnapshot.data()[get_key];
@@ -306,13 +345,10 @@ export default {
                             }  
                         });
                     
-                    }else if(type_var === "date"){
-                        //this.snack_text =this.entire_reservate;
-                        //this.snackbar = true;
+                    }else if(type_var === "date"){//날짜만 바꿔줄떄는 이미 존재하는 배열데이터의 위치에 맞게 데이터에 넣어준다.
+                        
                         let ar_cnt = 1;
                         this.entire_reservate.forEach((in_reservate)=>{
-                            //this.snack_text =get_key;
-                                //this.snackbar = true;
                             in_reservate.forEach((set_reserve)=>{
                                 let get_key = "mri"+ar_cnt+"_"+(set_reserve.time).replace(":","");
                                 let get_data = docSnapshot.data()[get_key];
@@ -332,15 +368,12 @@ export default {
                             });
                             ar_cnt = ar_cnt+1;
                         });
-                        //this.snack_text = this.entire_reservate;
-                        //this.snackbar = true;
-                        
                     }
                 }
             }catch(e){
 
             }
-            if(type_var == "init"){
+            if(type_var == "init"){//화면 첫로딩때는 전체 배열데이터에 넣어준다.
                 this.entire_reservate.push(this.reservate1);
                 this.entire_reservate.push(this.reservate2);
                 this.entire_reservate.push(this.reservate3);

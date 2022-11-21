@@ -32,6 +32,14 @@
                 <v-card class="pa-2" outlined tile > <v-btn @click="notice_dialog = true">등록</v-btn> </v-card> 
             </v-col>
         </v-row>
+        <v-row class='mb-6'> 
+            <v-col> 
+                <v-card class="pa-2" outlined tile > On Call Tab 입력 </v-card> 
+            </v-col>
+            <v-col> 
+                <v-card class="pa-2" outlined tile > <v-btn @click="oct_dialog = true">등록</v-btn> </v-card> 
+            </v-col>
+        </v-row>
 
 <v-snackbar v-model="snackbar" 
 :timeout="snack_timeout" > {{ snack_text }} 
@@ -156,7 +164,18 @@
                 <v-container>
                     <v-row class="mb-6" no-gutters >
                         <v-col>
-                            <v-textarea outlined label="공지사항 입력" v-model="notice_content" ></v-textarea>
+                            <v-textarea 
+                            outlined label="공지사항 입력" 
+                            v-model="notice_content" ></v-textarea>
+                        </v-col> 
+                    </v-row>
+                    <v-row class="mb-6" no-gutters >
+                        <v-col>
+                            <v-checkbox 
+                            outlined label="노출여부"
+                            false-value="N"
+                            true-value="Y" 
+                            v-model="notice_onboard" ></v-checkbox>
                         </v-col> 
                     </v-row>
                 </v-container>
@@ -168,13 +187,33 @@
             </v-card-actions> 
         </v-card> 
     </v-dialog>
-
+    <v-dialog v-model="oct_dialog" persistent max-width="600px" > 
+        <v-card>
+            <v-card-title> 
+                <span class="text-h5">On Call Tab 입력</span> 
+            </v-card-title> 
+            <v-card-text> 
+                <v-container>
+                    <v-row class="mb-6" no-gutters >
+                        <v-col>
+                            <v-textarea outlined label="On Call Tab 입력" v-model="oct_content" ></v-textarea>
+                        </v-col> 
+                    </v-row>
+                </v-container>
+            </v-card-text> 
+            <v-card-actions> 
+                <v-spacer></v-spacer>
+                <v-btn color="blue darken-1" text @click="oct_dialog = false" > 닫기 </v-btn> 
+                <v-btn color="blue darken-1" text @click="oct_submit()" > 저장 </v-btn>
+            </v-card-actions> 
+        </v-card> 
+    </v-dialog>
 </v-row> 
 </v-container>
 </template>
 <script>
 
-import { query, deleteDoc, getDocs, collection,orderBy,setDoc,doc,updateDoc } from "firebase/firestore";
+import { query, deleteDoc,getDoc, getDocs, collection,orderBy,setDoc,doc } from "firebase/firestore";
 import dayjs from "dayjs";
 
 export default {
@@ -187,6 +226,7 @@ export default {
             time_dialog: false,
             desc_dialog: false,
             notice_dialog: false,
+            oct_dialog:false,
             dialog: false,
             add_desc:'',
             selected_desc:null,
@@ -195,6 +235,8 @@ export default {
             time_items: ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00'],
             selected_time: [],
             notice_content:'',
+            notice_onboard:'',
+            oct_content:'',
             authList: [ { name: '관리자', value: 'M'}, { name: '방사선사', value: 'R'},{ name: '외래 사용자', value: 'N'} ], 
             user_auth_rule: [ v => !!v || '권한은 필수 선택 사항입니다.' ],
             user_id_rule: [ v => !!v || '아이디는 필수 입력 사항입니다.' ],
@@ -210,6 +252,8 @@ export default {
         }
         this.read_Desc();
         this.read_time();
+        this.read_notice();
+        this.read_oct();
     },
     methods: { 
         async user_Submit() { 
@@ -261,7 +305,6 @@ export default {
             }
         },
         async read_Desc() { 
-            //const q = query(collection(this.db, "description"), where("capital", "==", true));
             this.desc_items = [];
             const q = query(collection(this.$db, "description"), orderBy("desc","asc"));
             const querySnapshot = await getDocs(q);
@@ -283,16 +326,56 @@ export default {
                 }
             });
         },
+        async read_notice(){
+            try{
+                const docSnap = await getDoc(doc(this.$db, "notice", "notice"));
+                if(docSnap.exists){
+                    const get_data = docSnap.data();
+                    this.notice_content = get_data.notice;
+                    this.notice_onboard = get_data.onboard;
+                }
+            }catch(e){
+
+            }
+        },
+        async read_oct(){
+            try{
+                const docSnap = await getDoc(doc(this.$db, "oct", "oct"));
+                if(docSnap.exists){
+                    const get_data = docSnap.data();
+                    this.oct_content = get_data.oct;
+                }
+            }catch(e){
+
+            }
+        },
         async notice_submit(){
-            const date = dayjs().format("YYYY-MM-DD"); 
+            //const date = dayjs().format("YYYY-MM-DD"); 
             try {
-                await setDoc(doc(this.$db, "notice", date), {
-                    notice:this.notice_content
+                await setDoc(doc(this.$db, "notice", "notice"), {
+                    notice:this.notice_content,
+                    onboard:this.notice_onboard
                 });
 
-                this.notice_content = '';
+                //this.notice_content = '';
                 this.notice_dialog = false;
                 this.snack_text = '공지사항 등록이 완료되었습니다.';
+                this.snackbar = true;
+
+            } catch (e) {
+
+            }
+        },
+        async oct_submit(){
+            //const date = dayjs().format("YYYY-MM-DD"); 
+            try {
+                await setDoc(doc(this.$db, "oct", "oct"), {
+                    oct:this.oct_content
+                });
+
+                //this.oct_content = '';
+                this.oct_dialog = false;
+                this.snack_text = 'On Call Tab 등록이 완료되었습니다.';
                 this.snackbar = true;
 
             } catch (e) {

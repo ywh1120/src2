@@ -24,8 +24,10 @@
         </v-list-item>
       </v-list>
       <v-row justify="center"> 
-        <v-date-picker v-model="picker" locale="ko-kr" full-width class="mt-4" >
-        </v-date-picker> 
+        <v-date-picker v-model="picker" locale="ko-kr" full-width class="mt-4" ></v-date-picker> 
+      </v-row>
+      <v-row justify="center"> 
+        <v-textarea v-model="oct_content"  readonly></v-textarea> 
       </v-row>
     </v-navigation-drawer>
     <v-app-bar :clipped-left="clipped" fixed app>
@@ -117,6 +119,7 @@ export default {
       dialog: false,
       dialog_text:false,
       picker: (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().substr(0, 10),
+      oct_content:'',
       id:'',
       pass:'',
       auth:'',
@@ -175,6 +178,7 @@ export default {
         );
       }
     }
+    this.oct_load();
   },
   methods: {
     
@@ -204,6 +208,16 @@ export default {
     logout(){
       this.$cookies.remove('login');
       location.href = '/';
+    },
+    async oct_load(){
+      const q = doc(this.$db, "oct", "oct");
+      const docSnap = await getDoc(q);
+
+      if (docSnap.exists()) {
+        const get_data = docSnap.data();
+
+        this.oct_content = get_data.oct;
+      }
     }
   }
 }
