@@ -1,5 +1,6 @@
 export const strict = false;
 
 export const state = () => ({
-    loadDate : ''
+    loadDate : '',
+    prograss:false
 });

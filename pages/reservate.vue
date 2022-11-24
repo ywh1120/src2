@@ -1,6 +1,9 @@
 <template> 
     <div> 
-        
+        <v-progress-linear v-if="$store.state.prograss"
+        indeterminate
+        color="blue"
+        ></v-progress-linear>
         <v-container>
             
             <v-row > 
@@ -86,10 +89,19 @@
 
                                 <v-col cols="auto" align-self="center"> 
                                     <v-btn v-if="reserve.reservated == 'N'" color="primary" elevation="3" @click="reservate_mri(reserve, count+1)">예약</v-btn>
-                                    <v-btn v-else color="primary" elevation="3" @click="reservate_modify(reserve)">변경</v-btn> 
+                                    <v-btn 
+                                    v-else-if="(reserve.res_id == $cookies.get('login').id || 'M' == $cookies.get('login').auth) && reserve.reservated == 'Y'" 
+                                    color="warning" 
+                                    elevation="3" 
+                                    @click="reservate_modify(reserve)">변경
+                                    </v-btn> 
                                 </v-col> 
-                                <v-col cols="auto" align-self="center"> 
-                                    <v-btn v-if="reserve.res_id != ''" color="error" elevation="3" @click="reservate_cancel(reserve, count+1)">취소</v-btn> 
+                                <v-col cols="auto" align-self="center" v-if="reserve.reservated == 'Y'"> 
+                                    <v-btn v-if="reserve.res_id == $cookies.get('login').id || 'M' == $cookies.get('login').auth" 
+                                    color="error" 
+                                    elevation="3" 
+                                    @click="reservate_cancel(reserve, count+1)">취소
+                                    </v-btn> 
                                 </v-col> 
                             </v-row> 
                         </v-card> 
@@ -130,6 +142,7 @@
 </template> 
 <script>
 import { query, setDoc,doc, updateDoc, getDocs,getDoc, collection,orderBy,deleteField } from "firebase/firestore";
+import io from "socket.io-client"; 
 import dayjs from "dayjs";
 
 export default { 
@@ -153,14 +166,21 @@ export default {
         rules: [ value => !!value || 'Required.', value => (value && value.length >= 3) || 'Min 3 characters', ], 
         prograss_interval: {},
         prograss_value: 0,
+        socket:null
     }), 
-    
+    async created(){
+        this.socket = io('http://localhost:5003');
+        this.socket.on('toclient', function(msg){
+            this.read_reservate('init');
+        });
+    },
     mounted() {
         if(!this.$cookies.get('login')){
             location.href = '/';
         }
         
         this.init_screen();
+        
     },
     computed: {
         getDate() {
@@ -280,6 +300,7 @@ export default {
 
         async read_reservate(type_var){//예약된 데이터 읽어오기, 읽어온 데이터는 미리 세팅된 시간표 배열에 동일한 시간인지 확인하여 넣어준다.
             try{
+                this.$store.state.prograss = true;
                 const date = this.getDate;
                 const q = doc(this.$db, "reservate",date);
                 const docSnapshot = await getDoc(q);
@@ -378,6 +399,7 @@ export default {
                 this.entire_reservate.push(this.reservate2);
                 this.entire_reservate.push(this.reservate3);
             }
+            this.$store.state.prograss = false;
         },
         async reservate_mri(reserve, count){//예약함수
             const todate = dayjs().format("YYYY-MM-DD");
@@ -427,7 +449,8 @@ export default {
                         reserve.reservated = 'Y';
                         this.snack_text = '예약이 완료되었습니다.';
                         this.snackbar = true;
-
+                        //this.$socket.emit('update');
+                        this.socket.emit('toclient',{msg:'ins'});
                     //}
                 //}
                 
@@ -458,7 +481,7 @@ export default {
                 reserve.reservated='N';
                 this.snack_text = '예약이 취소되었습니다.';
                 this.snackbar = true;
-                
+                this.socket.emit('toclient',{msg:'ins'});
             }catch(e){
 
             }
