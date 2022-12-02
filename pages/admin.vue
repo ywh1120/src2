@@ -215,6 +215,7 @@
 
 import { query, deleteDoc,getDoc, getDocs, collection,orderBy,setDoc,doc } from "firebase/firestore";
 import dayjs from "dayjs";
+import axios from "axios";
 
 export default {
     data() { 

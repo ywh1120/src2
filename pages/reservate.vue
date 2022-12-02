@@ -141,8 +141,7 @@
 
 </template> 
 <script>
-import { query, setDoc,doc, updateDoc, getDocs,getDoc, collection,orderBy,deleteField } from "firebase/firestore";
-import io from "socket.io-client"; 
+import { query, setDoc,doc, updateDoc, getDocs,getDoc, collection,orderBy,deleteField,onSnapshot } from "firebase/firestore";
 import dayjs from "dayjs";
 
 export default { 
@@ -168,11 +167,8 @@ export default {
         prograss_value: 0,
         socket:null
     }), 
-    async created(){
-        this.socket = io('http://localhost:5003');
-        this.socket.on('toclient', function(msg){
-            this.read_reservate('init');
-        });
+    created(){
+       
     },
     mounted() {
         if(!this.$cookies.get('login')){
@@ -195,6 +191,7 @@ export default {
     },
     methods: { 
         init_screen(){//화면 초기화 함수
+            //this.$store.state.prograss = true;
             this.entire_reservate=[];
             this.reservate1=[];
             this.reservate2=[];
@@ -209,7 +206,7 @@ export default {
             const docSnapshot = await getDoc(q);
             if(docSnapshot.exists){
                 const get_data = docSnapshot.data();
-                if(get_data.onboard === 'Y'){
+                if(get_data && (get_data.onboard === 'Y')){
                     this.notice_content = get_data.notice;
                     this.notice_dialog = true;
                 }
@@ -298,99 +295,110 @@ export default {
             });
         },
 
-        async read_reservate(type_var){//예약된 데이터 읽어오기, 읽어온 데이터는 미리 세팅된 시간표 배열에 동일한 시간인지 확인하여 넣어준다.
+        read_reservate(type_var = 'date'){//예약된 데이터 읽어오기, 읽어온 데이터는 미리 세팅된 시간표 배열에 동일한 시간인지 확인하여 넣어준다.
             try{
-                this.$store.state.prograss = true;
                 const date = this.getDate;
-                const q = doc(this.$db, "reservate",date);
-                const docSnapshot = await getDoc(q);
-                
-                if(docSnapshot.exists){
-                    if(type_var === "init"){//화면이 첫 로딩되어 초기화 될때는 각 배열 데이터 새로 생성하여 넣어준다.
-                        this.reservate1.forEach((time_data,idx)=>{
-                            const get_key = "mri1_"+(time_data.time).replace(":","");
-                            const get_data = docSnapshot.data()[get_key];
-
-                            if(get_data){
-                                const get_reserve={
-                                    time:get_data.time,
-                                    res_desc:get_data.res_desc,
-                                    res_name:get_data.res_name,
-                                    res_num:get_data.res_num,
-                                    res_id:get_data.res_id,
-                                    res_reading:get_data.res_reading,
-                                    res_comment:get_data.res_comment,
-                                    mri_num:get_data.mri_num,
-                                    reservated:'Y'
-                                };
-                                this.reservate1[idx] = get_reserve;
-
-                            }  
-                        });
-
-                        this.reservate2.forEach((time_data,idx)=>{
-                            const get_key = "mri2_"+(time_data.time).replace(":","");
-                            const get_data = docSnapshot.data()[get_key];  
-                            if(get_data){
-                                const get_reserve={
-                                    time:get_data.time,
-                                    res_desc:get_data.res_desc,
-                                    res_name:get_data.res_name,
-                                    res_num:get_data.res_num,
-                                    res_id:get_data.res_id,
-                                    res_reading:get_data.res_reading,
-                                    res_comment:get_data.res_comment,
-                                    mri_num:get_data.mri_num,
-                                    reservated:'Y'
-                                };
-                                this.reservate2[idx] = get_reserve;
-                            }  
-                        });
-
-                        this.reservate3.forEach((time_data,idx)=>{
-                            const get_key = "mri3_"+(time_data.time).replace(":","");
-                            const get_data = docSnapshot.data()[get_key];  
-                            if(get_data){
-                                const get_reserve={
-                                    time:get_data.time,
-                                    res_desc:get_data.res_desc,
-                                    res_name:get_data.res_name,
-                                    res_num:get_data.res_num,
-                                    res_id:get_data.res_id,
-                                    res_reading:get_data.res_reading,
-                                    res_comment:get_data.res_comment,
-                                    mri_num:get_data.mri_num,
-                                    reservated:'Y'
-                                };
-                                this.reservate3[idx] = get_reserve;
-                            }  
-                        });
+                const q = onSnapshot(doc(this.$db, "reservate",date),(docSnapshot)=>{
                     
-                    }else if(type_var === "date"){//날짜만 바꿔줄떄는 이미 존재하는 배열데이터의 위치에 맞게 데이터에 넣어준다.
-                        
-                        let ar_cnt = 1;
-                        this.entire_reservate.forEach((in_reservate)=>{
-                            in_reservate.forEach((set_reserve)=>{
-                                let get_key = "mri"+ar_cnt+"_"+(set_reserve.time).replace(":","");
-                                let get_data = docSnapshot.data()[get_key];
+                    if(docSnapshot.exists){
+                        if(type_var === "init"){//화면이 첫 로딩되어 초기화 될때는 각 배열 데이터 새로 생성하여 넣어준다.
+                            this.reservate1.forEach((time_data,idx)=>{
                                 
+                                const get_key = "mri1_"+(time_data.time).replace(":","");
+                                const get_data = docSnapshot.data()[get_key] || null;
+
                                 if(get_data){
-                                    if((get_data.time === set_reserve.time)){
-                                        set_reserve.res_desc = get_data.res_desc;
-                                        set_reserve.res_name = get_data.res_name;
-                                        set_reserve.res_num = get_data.res_num;
-                                        set_reserve.res_id = get_data.res_id;
-                                        set_reserve.res_reading = get_data.res_reading;
-                                        set_reserve.res_comment = get_data.res_comment;
-                                        set_reserve.mri_num = get_data.mri_num;
-                                        set_reserve.reservated = 'Y';
-                                    }
+                                    const get_reserve={
+                                        time:get_data.time,
+                                        res_desc:get_data.res_desc,
+                                        res_name:get_data.res_name,
+                                        res_num:get_data.res_num,
+                                        res_id:get_data.res_id,
+                                        res_reading:get_data.res_reading,
+                                        res_comment:get_data.res_comment,
+                                        mri_num:get_data.mri_num,
+                                        reservated:'Y'
+                                    };
+                                    this.reservate1[idx] = get_reserve;
+
                                 }
+                                 
                             });
-                            ar_cnt = ar_cnt+1;
-                        });
+
+                            this.reservate2.forEach((time_data,idx)=>{
+                                
+                                const get_key = "mri2_"+(time_data.time).replace(":","");
+                                const get_data = docSnapshot.data()[get_key] || null;  
+                                if(get_data){
+                                    const get_reserve={
+                                        time:get_data.time,
+                                        res_desc:get_data.res_desc,
+                                        res_name:get_data.res_name,
+                                        res_num:get_data.res_num,
+                                        res_id:get_data.res_id,
+                                        res_reading:get_data.res_reading,
+                                        res_comment:get_data.res_comment,
+                                        mri_num:get_data.mri_num,
+                                        reservated:'Y'
+                                    };
+                                    this.reservate2[idx] = get_reserve;
+                                }
+                                  
+                            });
+
+                            this.reservate3.forEach((time_data,idx)=>{
+                                
+                                const get_key = "mri3_"+(time_data.time).replace(":","");
+                                const get_data = docSnapshot.data()[get_key] || null;  
+                                if(get_data){
+                                    const get_reserve={
+                                        time:get_data.time,
+                                        res_desc:get_data.res_desc,
+                                        res_name:get_data.res_name,
+                                        res_num:get_data.res_num,
+                                        res_id:get_data.res_id,
+                                        res_reading:get_data.res_reading,
+                                        res_comment:get_data.res_comment,
+                                        mri_num:get_data.mri_num,
+                                        reservated:'Y'
+                                    };
+                                    this.reservate3[idx] = get_reserve;
+                                }  
+                                
+                            });
+                        
+                        }else if(type_var === "date"){//날짜만 바꿔줄떄는 이미 존재하는 배열데이터의 위치에 맞게 데이터에 넣어준다.
+                            
+                            let ar_cnt = 1;
+                            this.entire_reservate.forEach((in_reservate)=>{
+                                
+                                in_reservate.forEach((set_reserve)=>{
+                                    let get_key = "mri"+ar_cnt+"_"+(set_reserve.time).replace(":","");
+                                    let get_data = docSnapshot.data()[get_key] || null;
+                                    
+                                    if(get_data){
+                                        if((get_data.time === set_reserve.time)){
+                                            set_reserve.res_desc = get_data.res_desc;
+                                            set_reserve.res_name = get_data.res_name;
+                                            set_reserve.res_num = get_data.res_num;
+                                            set_reserve.res_id = get_data.res_id;
+                                            set_reserve.res_reading = get_data.res_reading;
+                                            set_reserve.res_comment = get_data.res_comment;
+                                            set_reserve.mri_num = get_data.mri_num;
+                                            set_reserve.reservated = 'Y';
+                                        }
+                                    }
+                                });
+                                ar_cnt = ar_cnt+1;
+                                
+                            });
+                        }
                     }
-                }
+                    
+                });
+                //const docSnapshot = await getDoc(q);
+                
+                
             }catch(e){
 
             }
@@ -450,7 +458,7 @@ export default {
                         this.snack_text = '예약이 완료되었습니다.';
                         this.snackbar = true;
                         //this.$socket.emit('update');
-                        this.socket.emit('toclient',{msg:'ins'});
+                        //this.socket.emit('toclient',{msg:'ins'});
                     //}
                 //}
                 
@@ -469,7 +477,7 @@ export default {
                 const reservate_data = 'mri'+count+'_'+(reserve.time).replace(":","");
                 await updateDoc(doc(this.$db, "reservate", date), {
                     [reservate_data]: deleteField()
-                });
+                },{merge:true});
                 
                 reserve.res_desc = '';
                 reserve.res_name = '';
@@ -481,7 +489,7 @@ export default {
                 reserve.reservated='N';
                 this.snack_text = '예약이 취소되었습니다.';
                 this.snackbar = true;
-                this.socket.emit('toclient',{msg:'ins'});
+                //this.socket.emit('toclient',{msg:'ins'});
             }catch(e){
 
             }

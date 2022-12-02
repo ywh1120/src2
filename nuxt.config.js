@@ -38,10 +38,6 @@ export default {
     // https://go.nuxtjs.dev/axios
     '@nuxtjs/axios',
   ],
-  
-  serverMiddleware: [
-    '~/api/index.js'
-  ],
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
@@ -82,6 +78,6 @@ export default {
     FIREBASE_STORAGEBUCKET: process.env.storageBucket,
     FIREBASE_MESSAGINGSENDERID: process.env.messagingSenderId, 
     FIREBASE_APPID: process.env.appId, 
-    FIREBASE_MEASURMENTID: process.env.measurementId
+    BASE_URL: process.env.BASE_URL || ''
   },
 }

@@ -24,10 +24,19 @@
         </v-list-item>
       </v-list>
       <v-row justify="center"> 
-        <v-date-picker v-model="picker" locale="ko-kr" full-width class="mt-4" ></v-date-picker> 
+        <v-col>
+          <v-date-picker v-model="picker" locale="ko-kr" full-width class="mt-4" :allowed-dates="disablePastDates"></v-date-picker> 
+        </v-col>
       </v-row>
       <v-row justify="center"> 
-        <v-textarea v-model="oct_content"  readonly></v-textarea> 
+        <v-col>
+          <v-btn @click="movetoday()">TODAY</v-btn>
+        </v-col> 
+      </v-row>
+      <v-row justify="center">
+        <v-col> 
+          <v-textarea auto-grow v-model="oct_content"  readonly></v-textarea> 
+        </v-col>
       </v-row>
     </v-navigation-drawer>
     <v-app-bar :clipped-left="clipped" fixed app>
@@ -102,7 +111,8 @@
 </template>
 
 <script>
-import { doc, query, getDoc, collection, getDocs } from "firebase/firestore";
+import { doc, query, getDoc,onSnapshot } from "firebase/firestore";
+import dayjs from "dayjs";
 
 export default {
   name: 'DefaultLayout',
@@ -181,7 +191,13 @@ export default {
     this.oct_load();
   },
   methods: {
-    
+    movetoday(){
+      const todate = dayjs().format("YYYY-MM-DD");
+      this.picker = todate;
+    },
+    disablePastDates(date_val){
+      return date_val >= new Date().toISOString().substr(0,10);
+    },
     async login(){
       //const q = query(collection(this.$db, "users"), where("id","==",this.id));
       //const q = query(collection(this.$db, "description"), orderBy("desc","asc"));
@@ -210,14 +226,13 @@ export default {
       location.href = '/';
     },
     async oct_load(){
-      const q = doc(this.$db, "oct", "oct");
-      const docSnap = await getDoc(q);
+      const q = onSnapshot(doc(this.$db, "oct", "oct"),(docSnap)=>{
+        if (docSnap.exists()) {
+          const get_data = docSnap.data();
 
-      if (docSnap.exists()) {
-        const get_data = docSnap.data();
-
-        this.oct_content = get_data.oct;
-      }
+          this.oct_content = get_data.oct;
+        }
+      });
     }
   }
 }
