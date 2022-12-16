@@ -1,4 +1,5 @@
 <template>
+  
   <v-app dark>
     <v-navigation-drawer
       v-model="drawer"
@@ -25,7 +26,7 @@
       </v-list>
       <v-row justify="center"> 
         <v-col>
-          <v-date-picker v-model="picker" locale="ko-kr" full-width class="mt-4" :allowed-dates="disablePastDates"></v-date-picker> 
+          <v-date-picker v-model="picker" locale="ko-kr" full-width class="mt-4" ></v-date-picker> 
         </v-col>
       </v-row>
       <v-row justify="center"> 
@@ -35,7 +36,7 @@
       </v-row>
       <v-row justify="center">
         <v-col> 
-          <v-textarea auto-grow v-model="oct_content"  readonly></v-textarea> 
+          <v-textarea label="On Call" auto-grow v-model="oct_content"  readonly></v-textarea> 
         </v-col>
       </v-row>
     </v-navigation-drawer>
@@ -45,40 +46,32 @@
       <v-btn icon @click.stop="clipped = !clipped">
         <v-icon>mdi-application</v-icon>
       </v-btn>
-      <v-btn icon @click.stop="fixed = !fixed">
-        <v-icon>mdi-minus</v-icon>
-      </v-btn>
+      
       <v-toolbar-title v-text="title" />
-      <v-spacer />
-      <v-container v-if="cookie">
-        <v-row align="end">
-          <v-col align-self="end">
-            Welcome, {{cookie.id}}!<v-btn color="warning" dark @click="logout()"> 로그아웃 </v-btn>        
-          </v-col>
-        </v-row>
-      </v-container>
-      <v-container v-else>
-        <v-row>
-          <v-col>
-            <v-text-field v-model="id" label="아이디" placeholder="아이디입력" elevation="3" outlined hide-details dense ></v-text-field>
-          </v-col>
-          <v-col>
-            <v-text-field v-model="pass" label="비밀번호" placeholder="비밀번호입력" elevation="3" outlined hide-details dense ></v-text-field>
-          </v-col>
-          <v-col>
-            <v-btn color="success" dark @click="login()"> 로그인 </v-btn>
-          </v-col>
-        </v-row>
-      </v-container>
-      <v-btn icon @click.stop="rightDrawer = !rightDrawer">
-        <v-icon>mdi-menu</v-icon>
+      <v-spacer/>
+      <v-btn @click="scrollReservate('MRI')">
+        <v-icon>ScrollMRI</v-icon>
       </v-btn>
+      <v-spacer/>
+      <v-btn @click="scrollReservate('TCD')">
+        <v-icon>ScrollTCD</v-icon>
+      </v-btn>
+      <v-spacer/>
+      <div v-if="cookie">
+        Welcome, {{cookie.id}}!<v-btn color="warning" dark @click="logout()"> 로그아웃 </v-btn>  
+      </div>
+      <div style="display:flex" v-else>
+        <div><v-text-field v-model="id" label="아이디" placeholder="아이디입력" elevation="3" outlined hide-details dense ></v-text-field></div>
+        <div><v-text-field v-model="pass" label="비밀번호" placeholder="비밀번호입력" elevation="3" outlined hide-details dense @keyup.enter="login()"></v-text-field></div>
+        <div><v-btn color="success" dark @click="login()"> 로그인 </v-btn></div>  
+      </div>
+      
     </v-app-bar>
     <v-main>
       <v-container>
         <v-dialog v-model="dialog" persistent max-width="290" > 
           <v-card> 
-            <v-card-title class="text-h5"> 아이디 패스워드 확인 </v-card-title> 
+            <v-card-title class="text-h5"> {{ dialog_title }} </v-card-title> 
             <v-card-text>
               {{ dialog_text }}
             </v-card-text> 
@@ -109,7 +102,13 @@
 
   
 </template>
+<style scoped>
 
+.v-date-picker:deep(.v-date-picker-table .v-btn:not(.v-btn--disabled) .holiday-color){
+  color: red;
+}
+
+</style>
 <script>
 import { doc, query, getDoc,onSnapshot } from "firebase/firestore";
 import dayjs from "dayjs";
@@ -127,7 +126,8 @@ export default {
       drawer: false,
       fixed: false,
       dialog: false,
-      dialog_text:false,
+      dialog_text:'',
+      dialog_title:'',
       picker: (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().substr(0, 10),
       oct_content:'',
       id:'',
@@ -191,16 +191,58 @@ export default {
     this.oct_load();
   },
   methods: {
+    scrollReservate(where){
+      let target = '';
+      let targetTop = '';
+      let abTop = '';
+      let pretime = dayjs().hour();
+      if(pretime == '8' || pretime == '9'){
+        pretime = '0'+pretime;
+      }
+      this.dialog_title = '스크롤 불가';
+      if(where === 'TCD'){
+        if(document.getElementById("TCD_"+pretime+":00")){
+          target = document.getElementById("TCD_"+pretime+":00");
+        }else{
+          this.dialog_text = '예약가능한 TCD 시간이 존재하지 않습니다.';
+          this.dialog = true;
+          return;
+        }
+      }
+      if(where === 'MRI'){
+        if(document.getElementById("MRI1_"+pretime+":00")){
+          target = document.getElementById("MRI1_"+pretime+":00");
+        }else{
+          this.dialog_text = '예약가능한 MRI 시간이 존재하지 않습니다.';
+          this.dialog = true;
+          return;
+        }
+      }
+      targetTop = target.getBoundingClientRect().top;
+      abTop = window.pageYOffset + targetTop;
+      
+      window.scrollTo({top:abTop-100, behavior:'smooth'});
+    },
     movetoday(){
-      const todate = dayjs().format("YYYY-MM-DD");
-      this.picker = todate;
+      //const todate = dayjs().format("YYYY-MM-DD");
+      //this.picker = todate;
+      location.href = '/reservate';
     },
     disablePastDates(date_val){
       return date_val >= new Date().toISOString().substr(0,10);
     },
     async login(){
-      //const q = query(collection(this.$db, "users"), where("id","==",this.id));
-      //const q = query(collection(this.$db, "description"), orderBy("desc","asc"));
+      this.dialog_title = '아이디 패스워드 확인';
+      if(this.id === ''){
+        this.dialog_text = '아이디를 입력하십시오.';
+        this.dialog = true;
+        return;
+      }
+      if(this.pass === ''){
+        this.dialog_text = '패스워드를 입력하십시오.';
+        this.dialog = true;
+        return;
+      }
       const q = doc(this.$db, "users", this.id);
       const docSnap = await getDoc(q);
 

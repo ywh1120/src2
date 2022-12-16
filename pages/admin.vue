@@ -26,7 +26,7 @@
         </v-row>
         <v-row class='mb-6'> 
             <v-col> 
-                <v-card class="pa-2" outlined tile > 공자사항입력 </v-card> 
+                <v-card class="pa-2" outlined tile > 공지사항입력 </v-card> 
             </v-col>
             <v-col> 
                 <v-card class="pa-2" outlined tile > <v-btn @click="notice_dialog = true">등록</v-btn> </v-card> 
@@ -40,11 +40,7 @@
                 <v-card class="pa-2" outlined tile > <v-btn @click="oct_dialog = true">등록</v-btn> </v-card> 
             </v-col>
         </v-row>
-
-<v-snackbar v-model="snackbar" 
-:timeout="snack_timeout" > {{ snack_text }} 
-</v-snackbar>
-
+        <snackbar ref="sb" />
 <v-row justify="center">
     <v-dialog v-model="user_dialog" persistent max-width="600px" > 
         
@@ -68,7 +64,7 @@
                             v-model="user_pass" 
                             label="패스워드*"
                             :rules="user_pass_rule"
-                            type="password" 
+                            
                             required >
                             </v-text-field> 
                         </v-col> 
@@ -128,12 +124,30 @@
         <v-card-text> 
             <v-container> 
                 <v-row> 
-                    <v-col cols="12" sm="6"> 
+                    <v-col cols="12" sm="4"> 
                         <v-text-field 
                         v-model="add_desc"
                         label="검사명추가" 
                         required >
                         </v-text-field> 
+                    </v-col> 
+                    <v-col cols="12" sm="4"> 
+                        <v-checkbox 
+                        v-model="onehour_desc"
+                        label="1시간검사"
+                        false-value="N"
+                        true-value="Y" 
+                        required >
+                        </v-checkbox> 
+                    </v-col>
+                    <v-col cols="12" sm="4"> 
+                        <v-checkbox 
+                        v-model="dup_deny"
+                        label="동시불가"
+                        false-value="N"
+                        true-value="Y" 
+                        required >
+                        </v-checkbox> 
                     </v-col> 
                     <v-col cols="12">
                         <v-autocomplete 
@@ -216,6 +230,7 @@
 import { query, deleteDoc,getDoc, getDocs, collection,orderBy,setDoc,doc } from "firebase/firestore";
 import dayjs from "dayjs";
 import axios from "axios";
+import snackbar from '~/components/snackbar'
 
 export default {
     data() { 
@@ -233,6 +248,8 @@ export default {
             selected_desc:null,
             desc_items: [],
             //desc_items: [LSP,CSP,TLSP,Elbow,Knee,Foot-Ankle,Shoulder,Other],
+            onehour_desc: '',
+            dup_deny:'',
             time_items: ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00'],
             selected_time: [],
             notice_content:'',
@@ -266,8 +283,8 @@ export default {
                     auth: this.user_auth
                 });
                 this.user_dialog = false;
-                this.snack_text = '사용자 등록이 완료되었습니다.';
-                this.user_snackbar = true;
+
+                this.$refs.sb.open('사용자 등록이 완료되었습니다.');
             } catch (e) {
                 console.error("Error adding document: ", e);
             }
@@ -277,14 +294,16 @@ export default {
 
             try {
                 await setDoc(doc(this.$db, "description", this.add_desc), {
-                    desc:this.add_desc
+                    desc:this.add_desc,
+                    onehour_desc:this.onehour_desc,
+                    dup_deny:this.dup_deny
                 });
 
                 //console.log("Document written with ID: ", docRef.id);
                 this.add_desc = '';
                 this.desc_dialog = false;
-                this.snack_text = '검사명 등록이 완료되었습니다.';
-                this.snackbar = true;
+                
+                this.$refs.sb.open('검사명 등록이 완료되었습니다.');
                 this.read_Desc();
             } catch (e) {
                 console.error("Error adding document: ", e);
@@ -298,8 +317,8 @@ export default {
                 });
                 //await deleteDoc(doc(this.$db, "description", "DC"));
                 this.desc_dialog = false;
-                this.snack_text = '검사명 삭제가 완료되었습니다.';
-                this.snackbar = true;
+                
+                this.$refs.sb.open('검사명 등록이 완료되었습니다.');
                 this.read_Desc();
             }catch(e){
 
@@ -360,9 +379,8 @@ export default {
 
                 //this.notice_content = '';
                 this.notice_dialog = false;
-                this.snack_text = '공지사항 등록이 완료되었습니다.';
-                this.snackbar = true;
-
+                
+                this.$refs.sb.open('공지사항 등록이 완료되었습니다.');
             } catch (e) {
 
             }
@@ -376,9 +394,7 @@ export default {
 
                 //this.oct_content = '';
                 this.oct_dialog = false;
-                this.snack_text = 'On Call Tab 등록이 완료되었습니다.';
-                this.snackbar = true;
-
+                this.$refs.sb.open('On Call Tab 등록이 완료되었습니다.');
             } catch (e) {
 
             }
@@ -399,8 +415,8 @@ export default {
                 });
                 
                 this.time_dialog = false;
-                this.snack_text = '시간표 변경이 완료되었습니다.';
-                this.snackbar = true;
+                
+                this.$refs.sb.open('시간표 변경이 완료되었습니다.');
                 this.read_time();
             } catch {
 
