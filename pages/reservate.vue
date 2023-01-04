@@ -22,28 +22,34 @@
                             outlined 
                             elevation="15" 
                             :class="colorClass(reserve)"
-                            class="justify-center pt-3">
-                            <v-row class="justify-center"> 
-                                <v-col cols="11" sm="1" align-self="center"> 
+                            class="pt-1"
+                             no-gutter>
+                            <v-row class="pl-3" no-gutter> 
+                                <v-col no-gutter cols="12" sm="auto" align-self="center" class="pl-1 pr-1"> 
                                     <v-label> 
                                         <span v-if="(count < 2)" v-bind:id="'MRI'+(count+1)+'_'+reserve.time"> {{reserve.time}} </span>
                                         <span v-else v-bind:id="'TCD_'+reserve.time"> {{reserve.time}} </span>
                                     </v-label> 
                                 </v-col>  
-                                <v-col cols="11" sm="3" align-self="center" >
-                                    <v-text-field 
-                                    label="환자번호" 
-                                    placeholder="환자번호나 공백입력" 
-                                    elevation="3" 
-                                    outlined 
-                                    hide-details="auto" 
-                                     
-                                    dense 
-                                    :disabled="reserve.reservated == 'Y'"
-                                    v-model="reserve.res_num">
-                                    </v-text-field> 
+                                <v-col no-gutter cols="12" sm="3" align-self="center" class="pl-1 pr-1">
+                                    <v-tooltip bottom>
+                                    <template v-slot:activator="{ on }">
+                                        <v-text-field 
+                                        label="환자번호" 
+                                        placeholder="환자번호나 공백입력" 
+                                        elevation="3" 
+                                        outlined 
+                                        hide-details="auto" 
+                                        v-on="on"
+                                        dense 
+                                        :readonly="reserve.reservated == 'Y'"
+                                        v-model="reserve.res_num">
+                                        </v-text-field> 
+                                    </template>
+                                    <span>{{ reserve.res_num }}</span>
+                                    </v-tooltip>
                                 </v-col> 
-                                <v-col cols="11" sm="3" align-self="center"> 
+                                <!-- <v-col cols="16" sm="2" align-self="center"> 
                                     <v-text-field 
                                     label="예약자성함" 
                                     placeholder="이름입력" 
@@ -54,29 +60,55 @@
                                     :disabled="reserve.reservated == 'Y'"
                                     v-model="reserve.res_name">
                                     </v-text-field> 
+                                </v-col>--> 
+                                <v-col no-gutter v-if="count < 2" cols="12" sm="3" class="pl-1 pr-1" align-self="center"> 
+                                    <v-tooltip bottom>
+                                    <template v-slot:activator="{ on }">
+                                        <v-select 
+                                        :items="desc_items"
+                                        :item-text="'name'"
+                                        :item-value="'value'"
+                                        label="검사명" 
+                                        elevation="3" 
+                                        dense 
+                                        full-width 
+                                        solo 
+                                        v-on="on"
+                                        :readonly="reserve.reservated == 'Y'"
+                                        @change="descselectevent(reserve,count+1)"
+                                        class="inline select-box" 
+                                        hide-details 
+                                        v-model="reserve.res_desc">
+                                        </v-select> 
+                                    </template>
+                                    <span>{{ reserve.res_desc }}</span>
+                                    </v-tooltip>
                                 </v-col> 
-                                <v-col v-if="count < 2" cols="11" sm="4" align-self="center"> 
-                                    <v-select 
-                                    :items="desc_items"
-                                    :item-text="'name'"
-                                    :item-value="'value'"
-                                    label="검사명" 
-                                    elevation="3" 
-                                    dense 
-                                    full-width 
-                                    solo 
-                                    :disabled="reserve.reservated == 'Y'"
-                                    @change="descselectevent(reserve,count+1)"
-                                    class="inline select-box" 
-                                    hide-details 
-                                    v-model="reserve.res_desc">
-                                    </v-select> 
-                                </v-col> 
-                                <v-col v-else cols="11" sm="4" align-self="center">
+                                <v-col v-else cols="12" sm="3" align-self="center">
                                     <v-label>TCD</v-label>
                                 </v-col>
+                                <v-col cols="12" sm="auto" class="pl-1 pr-1" align-self="center"> 
+                                    <v-label> {{reserve.res_id == '' ? '예약없음' : reserve.res_id}} </v-label> 
+                                </v-col> 
+
+                                <v-col v-if=" 'U' != $cookies.get('login').auth " cols="12" sm="auto" class="pl-1 pr-1" align-self="center"> 
+                                    <v-btn v-if="reserve.reservated == 'N'" color="primary" elevation="3" @click="reservate_mri(reserve, count+1)">예약</v-btn>
+                                    <v-btn 
+                                    v-else-if="((reserve.res_id == $cookies.get('login').id) || 'M' == $cookies.get('login').auth || 'R' == $cookies.get('login').auth) && reserve.reservated == 'Y'" 
+                                    color="warning" 
+                                    elevation="3" 
+                                    @click="reservate_modify(reserve)">변경
+                                    </v-btn>
+                                </v-col> 
+                                <v-col cols="12" sm="1" class="pl-1 pr-1" align-self="center" v-if="(reserve.reservated == 'Y')"> 
+                                    <v-btn v-if="((reserve.res_id == $cookies.get('login').id) || 'M' == $cookies.get('login').auth || 'R' == $cookies.get('login').auth)" 
+                                    color="error" 
+                                    elevation="3" 
+                                    @click="reservate_cancel(reserve,count+1)">취소
+                                    </v-btn> 
+                                </v-col>
                             </v-row> 
-                            <v-row class="justify-center mt-1">
+                            <!-- <v-row class="justify-center mt-1">
                                 <v-col cols="3">
                                     <v-autocomplete 
                                     v-model="reserve.res_reading"
@@ -98,27 +130,8 @@
                                     v-model="reserve.res_comment">
                                     </v-text-field> 
                                 </v-col>
-                                <v-col cols="auto" align-self="center"> 
-                                    <v-label> {{reserve.res_id == '' ? '예약없음' : reserve.res_id}} </v-label> 
-                                </v-col> 
-
-                                <v-col cols="auto" align-self="center"> 
-                                    <v-btn v-if="reserve.reservated == 'N'" color="primary" elevation="3" @click="reservate_mri(reserve, count+1)">예약</v-btn>
-                                    <v-btn 
-                                    v-else-if="((reserve.res_id == $cookies.get('login').id) || 'M' == $cookies.get('login').auth || 'R' == $cookies.get('login').auth) && reserve.reservated == 'Y'" 
-                                    color="warning" 
-                                    elevation="3" 
-                                    @click="reservate_modify(reserve)">변경
-                                    </v-btn> 
-                                </v-col> 
-                                <v-col cols="auto" align-self="center" v-if="(reserve.reservated == 'Y')"> 
-                                    <v-btn v-if="((reserve.res_id == $cookies.get('login').id) || 'M' == $cookies.get('login').auth || 'R' == $cookies.get('login').auth)" 
-                                    color="error" 
-                                    elevation="3" 
-                                    @click="reservate_cancel(reserve,count+1)">취소
-                                    </v-btn> 
-                                </v-col>
-                            </v-row>
+                                
+                            </v-row> -->
                         </v-card> 
                     
                 </v-col> 
@@ -168,7 +181,9 @@ export default {
         res_desc:'',
         res_id:'',
         desc_items: [], 
-        time_items:[], 
+        time_items1:[],
+        time_items2:[], 
+        time_items3:[], 
         reading_items:["판독","의뢰","폐소"],
         entire_reservate:[],
         reservate1:[],
@@ -187,7 +202,8 @@ export default {
         data_modify : false
     }), 
     components: {
-        confirm
+        confirm,
+        snackbar
     },
     created(){
         this.entire_reservate=[];
@@ -201,6 +217,7 @@ export default {
         
         if(!this.$cookies.get('login')){
             location.href = '/';
+            //this.$router.go(1);
         }
         this.init_screen();
         
@@ -226,8 +243,9 @@ export default {
             
             this.read_Desc();
             this.read_Time();
-            this.read_reservate();
+            //this.read_reservate();
             this.load_notice();
+            //this.init_read_reservate();
         },
         async load_notice(){
             const q = doc(this.$db, "notice","notice");
@@ -242,7 +260,6 @@ export default {
             }
         },
         load_date(){
-            //this.init_screen()
             this.entire_reservate.forEach((input_reservate)=>{
                 input_reservate.forEach((reservate_data)=>{
                     reservate_data.res_desc='';
@@ -278,13 +295,6 @@ export default {
                                     return false;
                                 }
                             });
-                            this.entire_reservate[2].forEach((reserve)=>{
-                                if((reserve.res_desc === get_reservate.res_desc) && (reserve.time === get_reservate.time)){
-                                    find_val = true;
-                                    return false;
-                                }
-                            });
-                            
                             
                         }
                         break;
@@ -296,28 +306,7 @@ export default {
                                     return false;
                                 }
                             });
-                            this.entire_reservate[2].forEach((reserve)=>{
-                                if((reserve.res_desc === get_reservate.res_desc) && (reserve.time === get_reservate.time)){
-                                    find_val = true;
-                                    return false;
-                                }
-                            });
-                        }
-                        break;
-                    case 3:
-                        {
-                            this.entire_reservate[0].forEach((reserve)=>{
-                                if((reserve.res_desc === get_reservate.res_desc) && (reserve.time === get_reservate.time)){
-                                    find_val = true;
-                                    return false;
-                                }
-                            });
-                            this.entire_reservate[1].forEach((reserve)=>{
-                                if((reserve.res_desc === get_reservate.res_desc) && (reserve.time === get_reservate.time)){
-                                    find_val = true;
-                                    return false;
-                                }
-                            });
+                            
                         }
                         break;
                 }
@@ -349,81 +338,104 @@ export default {
             
         },
         async read_Time() {//관리자 페이지에서 등록한 시간표 읽어 들이는 함수
-            this.time_items = [];
-            const q = query(collection(this.$db, "time"));
-            const querySnapshot = await getDocs(q);
+            this.time_items1 = [];
+            this.time_items2 = [];
+            this.time_items3 = [];
 
-            querySnapshot.forEach((doc) => {
+            const q1 = query(collection(this.$db, "time1"));
+            const querySnapshot1 = await getDocs(q1);
+
+            querySnapshot1.forEach((doc) => {
                 let get_data = doc.data();
                 if(get_data.use === 'Y'){//시간 데이터중 사용하겠다는 속성을 가진 시간만 넣어준다
-                    this.time_items.push(get_data.time);
+                    this.time_items1.push(get_data.time);
+                }
+            });
+
+            const q2 = query(collection(this.$db, "time2"));
+            const querySnapshot2 = await getDocs(q2);
+
+            querySnapshot2.forEach((doc) => {
+                let get_data = doc.data();
+                if(get_data.use === 'Y'){//시간 데이터중 사용하겠다는 속성을 가진 시간만 넣어준다
+                    this.time_items2.push(get_data.time);
+                }
+            });
+
+            const q3 = query(collection(this.$db, "time3"));
+            const querySnapshot3 = await getDocs(q3);
+
+            querySnapshot3.forEach((doc) => {
+                let get_data = doc.data();
+                if(get_data.use === 'Y'){//시간 데이터중 사용하겠다는 속성을 가진 시간만 넣어준다
+                    this.time_items3.push(get_data.time);
                 }
             });
             
-            this.set_timetable(this.time_items);
+            this.set_timetable(this.time_items1, 1);
+            this.set_timetable(this.time_items2, 2);
+            this.set_timetable(this.time_items3, 3);
+
+            this.read_reservate();
         },
 
-        set_timetable(t_items){//읽어온 시간표 배열 데이터에 세팅
+        set_timetable(t_items, time_num){//읽어온 시간표 배열 데이터에 세팅
             t_items.forEach((time)=>{
-            let reserve1={
-                time:time,
-                res_desc:'',
-                res_name:'',
-                res_num:'',
-                res_id:'',
-                res_reading:'',
-                res_comment:'',
-                mri_num:'',
-                reservated:'N'
-            };
+                let reserve={
+                    time:time,
+                    res_desc:'',
+                    res_name:'',
+                    res_num:'',
+                    res_id:'',
+                    res_reading:'',
+                    res_comment:'',
+                    mri_num:'',
+                    reservated:'N'
+                };
+                switch(time_num){
+                    case 1:
+                    this.reservate1.push(reserve);
+                    break;
 
-            let reserve2={
-                time:time,
-                res_desc:'',
-                res_name:'',
-                res_num:'',
-                res_id:'',
-                res_reading:'',
-                res_comment:'',
-                mri_num:'',
-                reservated:'N'
-            };
+                    case 2:
+                    this.reservate2.push(reserve);
+                    break;
+                    
+                    case 3:
+                    this.reservate3.push(reserve);
+                    break;
+                }
+            });
+            switch(time_num){
+                case 1:
+                this.entire_reservate.push(this.reservate1);
+                break;
 
-            let reserve3={
-                time:time,
-                res_desc:'',
-                res_name:'',
-                res_num:'',
-                res_id:'',
-                res_reading:'',
-                res_comment:'',
-                mri_num:'',
-                reservated:'N'
-            };
+                case 2:
+                this.entire_reservate.push(this.reservate2);
+                break;
 
-            this.reservate1.push(reserve1);
-            this.reservate2.push(reserve2);
-            this.reservate3.push(reserve3);
-        });
-
-            this.entire_reservate.push(this.reservate1);
-            this.entire_reservate.push(this.reservate2);
-            this.entire_reservate.push(this.reservate3);
+                case 3:
+                this.entire_reservate.push(this.reservate3);
+                break;
+            }
         },
-
 
         read_reservate(){//예약된 데이터 읽어오기, 읽어온 데이터는 미리 세팅된 시간표 배열에 동일한 시간인지 확인하여 넣어준다.
             
             try{
                 const date = this.getDate;
+                
                 const q = onSnapshot(doc(this.$db, "reservate",date),(docSnapshot)=>{
+                    
                     if(docSnapshot.exists){
+                        
                         let ar_cnt = 1;
                         this.entire_reservate.forEach((in_reservate)=>{
                             in_reservate.forEach((set_reserve)=>{
                             const get_key = "mri"+ar_cnt+"_"+(set_reserve.time).replace(":","");
                             const get_data = docSnapshot.data()?.[get_key];//해당 키값을 찾는지 못찾는지는 optional chaining으로 확인(?.)
-
+                            //this.$refs.sb.open(get_data?.res_id);
                             if(get_data !== undefined){
                                 if((get_data.time === set_reserve.time)){
                                     set_reserve.res_desc = get_data.res_desc;
@@ -463,11 +475,11 @@ export default {
             const date = this.getDate;
             const comptime = reserve.time.split(":");
             
-            if(todate > date){
+            if(todate > date && this.$cookies.get('login').auth !== 'M'){
                 this.$refs.sb.open('예약가능한 날짜가 아닙니다.');
                 return;
             }
-            if(todate === date){
+            if(todate === date && this.$cookies.get('login').auth !== 'M'){
                 if(dayjs().hour() > comptime[0]){
                     this.$refs.sb.open('예약가능한 시간이 아닙니다.');
                     return;
@@ -496,18 +508,19 @@ export default {
                     return;
                 }
             }
-
+            /*
             if(reserve.res_name === ''){
                 this.$refs.sb.open('예약자성함을 입력해 주십시오.');
                 return;
-            }
+            }*/
             
             if(reserve.res_desc === '' && count != 3){
                 this.$refs.sb.open('검사명을 입력해 주십시오.');
                 this.snackbar = true;
                 return;
-            }else if(count == 3){
+            }else if(count == 3){//TCD는 검사명 고정되며 혹시 다른 mri에서 1시간 검사 눌러놓고 예약하면 1시간짜리로 예약 잡히는것 방지하고자 한시간 예약 값 n설정
                 reserve.res_desc = 'TCD';
+                this.onehour_res = 'N';
             }
             
             //reserve.res_id = this.$cookies.get('login').id;
@@ -551,6 +564,7 @@ export default {
                             reserve.res_id = '';
                             reserve.res_reading = '';
                             reserve.res_comment = '';
+                            this.onehour_res = 'N';
                             return;
                         }
                     }
@@ -615,7 +629,7 @@ export default {
                     this.$refs.sb.open('예약이 완료되었습니다.');
 
                 this.data_modify = false;
-                
+                this.onehour_res = 'N';//기본은 30단위 예약이기 때문에 혹시 1시간짜리 예약과 데이터 꼬이는 부분 방지하고자 예약 끝나면 1시간 예약은 무조건 N설정
             } catch (e) {
 
             }
