@@ -43,7 +43,8 @@
                                         v-on="on"
                                         dense 
                                         :readonly="reserve.reservated == 'Y'"
-                                        v-model="reserve.res_num">
+                                        :value="reserve.res_num"
+                                        @change="v => reserve.res_num = v">
                                         </v-text-field> 
                                     </template>
                                     <span>{{ reserve.res_num }}</span>
@@ -77,6 +78,7 @@
                                         :readonly="reserve.reservated == 'Y'"
                                         @change="descselectevent(reserve,count+1)"
                                         class="inline select-box" 
+                                        :background-color="colorClass(reserve)"
                                         hide-details 
                                         v-model="reserve.res_desc">
                                         </v-select> 
@@ -85,7 +87,7 @@
                                     </v-tooltip>
                                 </v-col> 
                                 <v-col v-else cols="12" sm="3" align-self="center">
-                                    <v-label>TCD</v-label>
+                                    <v-label>TCD + PW</v-label>
                                 </v-col>
                                 <v-col cols="12" sm="auto" class="pl-1 pr-1" align-self="center"> 
                                     <v-label> {{reserve.res_id == '' ? '예약없음' : reserve.res_id}} </v-label> 
@@ -213,11 +215,9 @@ export default {
         //this.getDate = this.$store.state.loadDate;
     },
     mounted() {
-        //this.$router.go();
         
         if(!this.$cookies.get('login')){
             location.href = '/';
-            //this.$router.go(1);
         }
         this.init_screen();
         
@@ -236,7 +236,7 @@ export default {
     methods: { 
         colorClass(reservate) {
     	    let color = (reservate.reservated === 'Y' ) ? 'green lighten-3' : 'white';
-    	    return 'color: '+color;
+    	    return color;
         },
         init_screen(){//화면 초기화 함수
             //this.$store.state.prograss = true;
@@ -540,9 +540,13 @@ export default {
                     let reservate_data2 = '';
                     let computetime = '';
                     if(comptime[0] === '08' || comptime[0] === '09'){//여기서 부터 시간을 숫자로 변환하여 다음 행을 예약하는 로직
-                        if(comptime[1] === '30')//30분의 경우 다음행은 1시간이 되므로 70을 더해준다
-                            computetime = "0"+String(Number((reserve.time).replace(":",""))+70);
-                        else//00분의 경우 다음행은 30분이 되므로 30을 더해준다
+                        if(comptime[1] === '30'){//30분의 경우 다음행은 1시간이 되므로 70을 더해준다
+                            computetime = String(Number((reserve.time).replace(":",""))+70);
+                            if(computetime === '900'){
+                                computetime = '0'+computetime;
+                            }
+                            
+                        }else//00분의 경우 다음행은 30분이 되므로 30을 더해준다
                             computetime = "0"+String(Number((reserve.time).replace(":",""))+30);
                     }else{//08시 및 09시는 앞에 별도의 0을 붙여줄 필요 없음
                         if(comptime[1] === '30')
@@ -579,7 +583,8 @@ export default {
                             res_reading:reserve.res_reading,
                             res_comment:reserve.res_comment,
                             mri_num:count,
-                            res_chained:reservate_data2
+                            res_chained:reservate_data2,
+                            res_date:this.getDate
                         },
                         [reservate_data2]:{
                             time:computetime.slice(0,2) + ':' + computetime.slice(2, 4),
@@ -590,7 +595,8 @@ export default {
                             res_reading:reserve.res_reading,
                             res_comment:reserve.res_comment,
                             mri_num:count,
-                            res_chained:reservate_data1
+                            res_chained:reservate_data1,
+                            res_date:this.getDate
                         }
                     },{merge:true});
                 }else{
@@ -618,7 +624,8 @@ export default {
                             res_reading:reserve.res_reading,
                             res_comment:reserve.res_comment,
                             mri_num:count,
-                            res_chained:''
+                            res_chained:'',
+                            res_date:this.getDate
                         }
                     },{merge:true});
                 }  
