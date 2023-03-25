@@ -49,6 +49,15 @@
       
       <v-toolbar-title v-text="title" />
       <v-spacer/>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on }">
+          <v-btn v-on="on" >
+            <v-icon>검사명 안내</v-icon>
+          </v-btn> 
+        </template>
+        <span style="white-space:pre;">{{ notice_content }}</span>
+      </v-tooltip>
+      <v-spacer/>
       <v-btn @click="scrollReservate('MRI')">
         <v-icon>ScrollMRI</v-icon>
       </v-btn>
@@ -130,6 +139,7 @@ export default {
       dialog_title:'',
       picker: (new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000)).toISOString().substr(0, 10),
       oct_content:'',
+      notice_content:'',
       id:'',
       pass:'',
       auth:'',
@@ -189,6 +199,7 @@ export default {
       }
     }
     this.oct_load();
+    this.notice_load();
   },
   methods: {
     scrollReservate(where){
@@ -275,7 +286,18 @@ export default {
           this.oct_content = get_data.oct;
         }
       });
+    },
+
+    async notice_load(){
+      const q = onSnapshot(doc(this.$db, "notice", "notice"),(docSnap)=>{
+        if (docSnap.exists()) {
+          const get_data = docSnap.data();
+          this.notice_content = get_data.notice;
+        }
+      });
     }
+
+
   }
 }
 </script>
